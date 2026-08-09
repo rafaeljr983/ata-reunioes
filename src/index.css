@@ -700,8 +700,30 @@ img {
 
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.field-row .field {
+  min-width: 0;
+}
+
+.field-row input[type='date'],
+.field-row input[type='time'] {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  padding: 12px 10px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 380px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tag-input {
