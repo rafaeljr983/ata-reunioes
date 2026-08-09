@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import { getBootState, readLocalSession } from '../lib/authBoot'
 import { cpfToAuthEmail, isValidCpf, onlyDigits } from '../lib/cpf'
 import { rowToProfile } from '../lib/mappers'
 import { isOnline, loadCachedProfile, saveCachedProfile } from '../lib/offlineStore'
@@ -17,9 +18,11 @@ function authMessage(message: string): string {
 }
 
 export function useAuth() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(() => loadCachedProfile())
-  const [loading, setLoading] = useState(true)
+  const boot = getBootState()
+  const [session, setSession] = useState<Session | null>(() => boot.session)
+  const [profile, setProfile] = useState<Profile | null>(() => boot.profile)
+  // Se já tem sessão+perfil no aparelho, não mostra "Carregando…"
+  const [loading, setLoading] = useState(() => !boot.ready)
   const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = useCallback(async (userId: string, allowNetwork = true) => {
@@ -28,7 +31,6 @@ export function useAuth() {
       setProfile(cached)
     }
 
-    // Offline: não espera rede falhar — usa cache na hora
     if (!allowNetwork || !isOnline()) {
       if (cached?.id === userId) {
         setError(null)
@@ -73,30 +75,38 @@ export function useAuth() {
     async function applySession(nextSession: Session | null, options?: { showLoading?: boolean }) {
       if (!active) return
       const offline = !isOnline()
-      if (options?.showLoading && !offline) setLoading(true)
+      if (options?.showLoading && !offline && !getBootState().ready) {
+        setLoading(true)
+      }
 
       setSession(nextSession)
       if (nextSession?.user) {
         await fetchProfile(nextSession.user.id, !offline)
-      } else {
+      } else if (!offline) {
         setProfile(null)
       }
       if (active) setLoading(false)
     }
 
     async function init() {
-      const offline = !isOnline()
+      // Já temos tudo no aparelho: UI libera na hora; sincroniza em segundo plano só se online
+      const local = readLocalSession()
       const cached = loadCachedProfile()
+      if (local?.user && cached?.id === local.user.id) {
+        setSession(local)
+        setProfile(cached)
+        setLoading(false)
+        if (!isOnline()) return
+        void supabase.auth.getSession().then(({ data }) => {
+          if (!active) return
+          void applySession(data.session)
+        })
+        return
+      }
 
-      // Offline rápido: sessão local + perfil em cache (sem esperar rede)
-      if (offline) {
+      if (!isOnline()) {
+        if (local) setSession(local)
         if (cached) setProfile(cached)
-        const { data } = await supabase.auth.getSession()
-        if (!active) return
-        setSession(data.session)
-        if (data.session?.user) {
-          await fetchProfile(data.session.user.id, false)
-        }
         if (active) setLoading(false)
         return
       }
@@ -110,6 +120,7 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      // Evita tela de loading em mudanças de token
       void applySession(nextSession)
     })
 

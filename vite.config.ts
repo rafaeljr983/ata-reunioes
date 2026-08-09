@@ -31,8 +31,18 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,svg,webmanifest,woff2}'],
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages-cache',
+              // Sem internet / rede lenta: usa cache em até 1s (evita espera longa)
+              networkTimeoutSeconds: 1,
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',

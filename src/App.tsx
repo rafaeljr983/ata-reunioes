@@ -64,7 +64,8 @@ export default function App() {
     }
   }
 
-  if (auth.loading) {
+  // Com sessão/perfil em cache, pula a tela de carregamento
+  if ((auth.loading && !auth.hasAccess) || (auth.hasAccess && !auth.session)) {
     return (
       <div className="app-shell">
         <div className="empty empty--full">
