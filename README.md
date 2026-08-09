@@ -60,6 +60,16 @@ Uma **URL** é o endereço do site na internet (ex.: `https://ata-capela.onrende
 
 Pronto: o Render gera um link tipo `https://seu-app.onrender.com`.
 
+## Offline e sincronização
+
+Depois de abrir o app online pelo menos uma vez (e estar logado), ele funciona **offline**:
+
+- Lê as atas já baixadas no aparelho
+- Cria/edita/exclui atas sem internet
+- Ao voltar a conexão, envia as alterações para o Supabase automaticamente
+
+Um aviso na tela mostra quando está sem internet ou com alterações pendentes.
+
 ## Funcionalidades
 
 - Login e cadastro com aprovação do administrador
@@ -70,3 +80,4 @@ Pronto: o Render gera um link tipo `https://seu-app.onrender.com`.
 - Finalizar / reabrir ata
 - Compartilhar ou copiar a ata em texto
 - Exclusão com confirmação
+- Uso offline com sincronização automática

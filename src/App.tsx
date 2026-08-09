@@ -17,7 +17,16 @@ type AuthScreen = 'login' | 'signup'
 export default function App() {
   const auth = useAuth()
   const userId = auth.session?.user.id ?? null
-  const { atas, loading: atasLoading, upsert, remove, getById } = useAtas(auth.hasAccess, userId)
+  const {
+    atas,
+    loading: atasLoading,
+    upsert,
+    remove,
+    getById,
+    pendingCount,
+    online,
+    syncing,
+  } = useAtas(auth.hasAccess, userId)
   const [authScreen, setAuthScreen] = useState<AuthScreen>('login')
   const [view, setView] = useState<View>({ name: 'home' })
   const [toast, setToast] = useState<string | null>(null)
@@ -152,7 +161,11 @@ export default function App() {
                 showToast(result.message)
                 return
               }
-              showToast('Ata salva')
+              showToast(
+                'offline' in result && result.offline
+                  ? 'Ata salva no aparelho · sincroniza depois'
+                  : 'Ata salva',
+              )
               setView({ name: 'detail', ataId: ata.id })
             })
           }}
@@ -210,10 +223,14 @@ export default function App() {
             if (window.confirm('Excluir esta ata? Essa ação não pode ser desfeita.')) {
               void remove(ata.id).then((result) => {
                 if (!result.ok) {
-                  showToast(result.message)
+                  showToast(result.message ?? 'Não foi possível excluir')
                   return
                 }
-                showToast('Ata excluída')
+                showToast(
+                  'offline' in result && result.offline
+                    ? 'Exclusão salva no aparelho · sincroniza depois'
+                    : 'Ata excluída',
+                )
                 setView({ name: 'home' })
               })
             }
@@ -232,6 +249,9 @@ export default function App() {
         loading={atasLoading}
         userName={auth.profile.name}
         isAdmin={auth.isAdmin}
+        online={online}
+        pendingCount={pendingCount}
+        syncing={syncing}
         onOpen={(id) => setView({ name: 'detail', ataId: id })}
         onCreate={() => setView({ name: 'editor', ataId: null })}
         onAdmin={() => setView({ name: 'admin' })}

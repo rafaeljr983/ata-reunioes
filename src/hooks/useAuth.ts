@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { cpfToAuthEmail, isValidCpf, onlyDigits } from '../lib/cpf'
 import { rowToProfile } from '../lib/mappers'
+import { loadCachedProfile, saveCachedProfile } from '../lib/offlineStore'
 import { supabase } from '../lib/supabase'
 import type { Profile, ProfileRow, UserStatus } from '../types'
 
@@ -22,6 +23,11 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = useCallback(async (userId: string) => {
+    const cached = loadCachedProfile()
+    if (cached?.id === userId) {
+      setProfile(cached)
+    }
+
     const { data, error: queryError } = await supabase
       .from('profiles')
       .select('*')
@@ -29,18 +35,26 @@ export function useAuth() {
       .maybeSingle()
 
     if (queryError) {
+      // Offline / rede: mantém perfil em cache para continuar usando o app
+      if (cached?.id === userId) {
+        setError(null)
+        return cached
+      }
       setError(queryError.message)
       setProfile(null)
       return null
     }
 
     if (!data) {
+      if (cached?.id === userId) return cached
       setProfile(null)
+      saveCachedProfile(null)
       return null
     }
 
     const mapped = rowToProfile(data as ProfileRow)
     setProfile(mapped)
+    saveCachedProfile(mapped)
     setError(null)
     return mapped
   }, [])
@@ -151,6 +165,7 @@ export function useAuth() {
     }
     setProfile(null)
     setSession(null)
+    saveCachedProfile(null)
   }
 
   const refreshProfile = useCallback(async () => {

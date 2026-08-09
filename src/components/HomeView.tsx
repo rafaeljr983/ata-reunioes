@@ -8,6 +8,9 @@ interface Props {
   loading?: boolean
   userName?: string
   isAdmin?: boolean
+  online?: boolean
+  pendingCount?: number
+  syncing?: boolean
   onOpen: (id: string) => void
   onCreate: () => void
   onAdmin?: () => void
@@ -21,6 +24,9 @@ export function HomeView({
   loading,
   userName,
   isAdmin,
+  online = true,
+  pendingCount = 0,
+  syncing = false,
   onOpen,
   onCreate,
   onAdmin,
@@ -87,6 +93,21 @@ export function HomeView({
           <ChapelIllustration />
         </div>
       </header>
+
+      {!online || pendingCount > 0 || syncing ? (
+        <div
+          className={`sync-banner${!online ? ' sync-banner--offline' : ''}${syncing ? ' sync-banner--syncing' : ''}`}
+          role="status"
+        >
+          {syncing
+            ? 'Sincronizando alterações…'
+            : !online
+              ? pendingCount > 0
+                ? `Sem internet · ${pendingCount} alteração(ões) serão enviadas depois`
+                : 'Sem internet · você pode ler e escrever atas'
+              : `${pendingCount} alteração(ões) aguardando envio`}
+        </div>
+      ) : null}
 
       <section className="home__list-section" aria-label="Lista de atas">
         <div className="toolbar">
