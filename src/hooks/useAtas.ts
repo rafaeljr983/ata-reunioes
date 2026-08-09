@@ -28,8 +28,8 @@ function applyLocalUpsert(list: Ata[], ata: Ata) {
 }
 
 export function useAtas(enabled: boolean, userId: string | null) {
-  const [atas, setAtas] = useState<Ata[]>(() => (enabled ? loadCachedAtas() : []))
-  const [loading, setLoading] = useState(enabled)
+  const [atas, setAtas] = useState<Ata[]>(() => loadCachedAtas())
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingCount, setPendingCount] = useState(() => loadQueue().length)
   const [online, setOnline] = useState(() => isOnline())
@@ -78,27 +78,24 @@ export function useAtas(enabled: boolean, userId: string | null) {
 
   const reload = useCallback(async () => {
     if (!enabled) {
-      setAtas([])
-      setLoading(false)
       return
     }
 
+    // Sempre mostra cache primeiro (sem tela de loading)
     const cached = loadCachedAtas()
-    if (cached.length) {
-      setAtas(sortAtas(cached))
-      setLoading(false)
-    } else {
-      setLoading(true)
-    }
+    setAtas(sortAtas(cached))
+    setPendingCount(loadQueue().length)
 
     if (!isOnline()) {
       setOnline(false)
-      setPendingCount(loadQueue().length)
       setLoading(false)
       return
     }
 
     setOnline(true)
+    // Só mostra loading se não há cache
+    if (!cached.length) setLoading(true)
+
     await flushQueue()
 
     const { data, error: queryError } = await supabase
@@ -109,7 +106,6 @@ export function useAtas(enabled: boolean, userId: string | null) {
 
     if (queryError) {
       setError(queryError.message)
-      if (!cached.length) setAtas([])
       setLoading(false)
       return
     }
@@ -123,17 +119,19 @@ export function useAtas(enabled: boolean, userId: string | null) {
   }, [enabled, flushQueue, setAndCache])
 
   useEffect(() => {
+    if (!enabled) return
     void reload()
-  }, [reload])
+  }, [enabled, reload])
 
   useEffect(() => {
     function handleOnline() {
       setOnline(true)
-      void reload()
+      if (enabled) void reload()
     }
     function handleOffline() {
       setOnline(false)
       setPendingCount(loadQueue().length)
+      setLoading(false)
     }
 
     window.addEventListener('online', handleOnline)
@@ -142,7 +140,7 @@ export function useAtas(enabled: boolean, userId: string | null) {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [reload])
+  }, [enabled, reload])
 
   async function upsert(ata: Ata) {
     if (!userId) {

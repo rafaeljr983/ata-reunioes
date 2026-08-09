@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { cpfToAuthEmail, isValidCpf, onlyDigits } from '../lib/cpf'
 import { rowToProfile } from '../lib/mappers'
-import { loadCachedProfile, saveCachedProfile } from '../lib/offlineStore'
+import { isOnline, loadCachedProfile, saveCachedProfile } from '../lib/offlineStore'
 import { supabase } from '../lib/supabase'
 import type { Profile, ProfileRow, UserStatus } from '../types'
 
@@ -18,14 +18,23 @@ function authMessage(message: string): string {
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(() => loadCachedProfile())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, allowNetwork = true) => {
     const cached = loadCachedProfile()
     if (cached?.id === userId) {
       setProfile(cached)
+    }
+
+    // Offline: não espera rede falhar — usa cache na hora
+    if (!allowNetwork || !isOnline()) {
+      if (cached?.id === userId) {
+        setError(null)
+        return cached
+      }
+      return null
     }
 
     const { data, error: queryError } = await supabase
@@ -35,7 +44,6 @@ export function useAuth() {
       .maybeSingle()
 
     if (queryError) {
-      // Offline / rede: mantém perfil em cache para continuar usando o app
       if (cached?.id === userId) {
         setError(null)
         return cached
@@ -62,12 +70,14 @@ export function useAuth() {
   useEffect(() => {
     let active = true
 
-    async function applySession(nextSession: Session | null, withLoading = false) {
+    async function applySession(nextSession: Session | null, options?: { showLoading?: boolean }) {
       if (!active) return
-      if (withLoading) setLoading(true)
+      const offline = !isOnline()
+      if (options?.showLoading && !offline) setLoading(true)
+
       setSession(nextSession)
       if (nextSession?.user) {
-        await fetchProfile(nextSession.user.id)
+        await fetchProfile(nextSession.user.id, !offline)
       } else {
         setProfile(null)
       }
@@ -75,8 +85,24 @@ export function useAuth() {
     }
 
     async function init() {
+      const offline = !isOnline()
+      const cached = loadCachedProfile()
+
+      // Offline rápido: sessão local + perfil em cache (sem esperar rede)
+      if (offline) {
+        if (cached) setProfile(cached)
+        const { data } = await supabase.auth.getSession()
+        if (!active) return
+        setSession(data.session)
+        if (data.session?.user) {
+          await fetchProfile(data.session.user.id, false)
+        }
+        if (active) setLoading(false)
+        return
+      }
+
       const { data } = await supabase.auth.getSession()
-      await applySession(data.session, true)
+      await applySession(data.session, { showLoading: true })
     }
 
     void init()
@@ -87,9 +113,9 @@ export function useAuth() {
       void applySession(nextSession)
     })
 
-    // Ao voltar para o app (aba/PWA), recupera e renova a sessão salva
     function onVisible() {
       if (document.visibilityState !== 'visible') return
+      if (!isOnline()) return
       void supabase.auth.getSession().then(({ data }) => {
         void applySession(data.session)
       })
@@ -151,7 +177,7 @@ export function useAuth() {
       return { ok: false as const, message }
     }
     if (data.user) {
-      await fetchProfile(data.user.id)
+      await fetchProfile(data.user.id, true)
     }
     return { ok: true as const }
   }
@@ -170,7 +196,7 @@ export function useAuth() {
 
   const refreshProfile = useCallback(async () => {
     if (!session?.user) return null
-    return fetchProfile(session.user.id)
+    return fetchProfile(session.user.id, true)
   }, [fetchProfile, session?.user])
 
   const listProfiles = useCallback(async () => {
