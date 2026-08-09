@@ -13,6 +13,7 @@ interface Props {
   syncing?: boolean
   onOpen: (id: string) => void
   onCreate: () => void
+  onDashboard?: () => void
   onAdmin?: () => void
   onSignOut: () => void
 }
@@ -29,6 +30,7 @@ export function HomeView({
   syncing = false,
   onOpen,
   onCreate,
+  onDashboard,
   onAdmin,
   onSignOut,
 }: Props) {
@@ -63,6 +65,11 @@ export function HomeView({
         <div className="home__atmosphere" aria-hidden="true" />
         <div className="home__bar">
           <div className="home__bar-actions home__bar-actions--end">
+            {onDashboard ? (
+              <button type="button" className="btn btn--ghost btn--on-hero btn--compact" onClick={onDashboard}>
+                Dashboard
+              </button>
+            ) : null}
             {isAdmin ? (
               <button type="button" className="btn btn--ghost btn--on-hero btn--compact" onClick={onAdmin}>
                 Usuários

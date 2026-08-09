@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AdminUsersView } from './components/AdminUsersView'
 import { AtaDetail } from './components/AtaDetail'
 import { AtaEditor } from './components/AtaEditor'
+import { DashboardView } from './components/DashboardView'
 import { HomeView } from './components/HomeView'
 import { LoginView } from './components/LoginView'
 import { PendingView } from './components/PendingView'
@@ -144,6 +145,19 @@ export default function App() {
     )
   }
 
+  if (view.name === 'dashboard') {
+    return (
+      <div className="app-shell">
+        <DashboardView
+          atas={atas}
+          userName={auth.profile.name}
+          onBack={() => setView({ name: 'home' })}
+        />
+        {toast ? <div className="toast">{toast}</div> : null}
+      </div>
+    )
+  }
+
   if (view.name === 'editor') {
     const existing = view.ataId ? getById(view.ataId) : null
     const initial = existing ?? createEmptyAta(userId)
@@ -255,6 +269,7 @@ export default function App() {
         syncing={syncing}
         onOpen={(id) => setView({ name: 'detail', ataId: id })}
         onCreate={() => setView({ name: 'editor', ataId: null })}
+        onDashboard={() => setView({ name: 'dashboard' })}
         onAdmin={() => setView({ name: 'admin' })}
         onSignOut={() => void auth.signOut()}
       />

@@ -45,6 +45,7 @@ export type View =
   | { name: 'editor'; ataId: string | null }
   | { name: 'detail'; ataId: string }
   | { name: 'admin' }
+  | { name: 'dashboard' }
 
 export interface AtaRow {
   id: string
