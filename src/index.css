@@ -700,14 +700,16 @@ img {
 
 .field-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-columns: 1fr;
   gap: 10px;
   width: 100%;
   max-width: 100%;
+  margin-bottom: 14px;
 }
 
 .field-row .field {
   min-width: 0;
+  margin-bottom: 0;
 }
 
 .field-row input[type='date'],
@@ -715,14 +717,14 @@ img {
   min-width: 0;
   max-width: 100%;
   width: 100%;
-  padding: 12px 10px;
-  font-size: 0.95rem;
+  padding: 12px 14px;
+  font-size: 1rem;
   box-sizing: border-box;
 }
 
-@media (max-width: 380px) {
+@media (min-width: 420px) {
   .field-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
