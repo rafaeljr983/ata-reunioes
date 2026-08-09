@@ -35,10 +35,10 @@ export function formatDateLong(iso: string): string {
   })
 }
 
-export function createEmptyAta(): Ata {
+export function createEmptyAta(createdBy?: string | null): Ata {
   const now = new Date().toISOString()
   return {
-    id: uid('ata'),
+    id: crypto.randomUUID(),
     title: '',
     date: todayISO(),
     time: nowTime(),
@@ -52,6 +52,7 @@ export function createEmptyAta(): Ata {
     status: 'rascunho',
     createdAt: now,
     updatedAt: now,
+    createdBy: createdBy ?? null,
   }
 }
 

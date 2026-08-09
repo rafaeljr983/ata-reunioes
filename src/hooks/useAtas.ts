@@ -1,31 +1,86 @@
-import { useEffect, useState } from 'react'
-import { loadAtas, saveAtas } from '../storage'
-import type { Ata } from '../types'
+import { useCallback, useEffect, useState } from 'react'
+import { ataToRow, rowToAta } from '../lib/mappers'
+import { supabase } from '../lib/supabase'
+import type { Ata, AtaRow } from '../types'
 
-export function useAtas() {
-  const [atas, setAtas] = useState<Ata[]>(() => loadAtas())
+export function useAtas(enabled: boolean, userId: string | null) {
+  const [atas, setAtas] = useState<Ata[]>([])
+  const [loading, setLoading] = useState(enabled)
+  const [error, setError] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    if (!enabled) {
+      setAtas([])
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    const { data, error: queryError } = await supabase
+      .from('atas')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('time', { ascending: false })
+
+    if (queryError) {
+      setError(queryError.message)
+      setAtas([])
+      setLoading(false)
+      return
+    }
+
+    setAtas((data as AtaRow[]).map(rowToAta))
+    setError(null)
+    setLoading(false)
+  }, [enabled])
 
   useEffect(() => {
-    saveAtas(atas)
-  }, [atas])
+    void reload()
+  }, [reload])
 
-  function upsert(ata: Ata) {
+  async function upsert(ata: Ata) {
+    if (!userId) {
+      return { ok: false as const, message: 'Usuário não autenticado' }
+    }
+
+    const payload = ataToRow(ata, userId)
+    const { data, error: upsertError } = await supabase
+      .from('atas')
+      .upsert(payload)
+      .select('*')
+      .single()
+
+    if (upsertError) {
+      setError(upsertError.message)
+      return { ok: false as const, message: upsertError.message }
+    }
+
+    const mapped = rowToAta(data as AtaRow)
     setAtas((prev) => {
-      const idx = prev.findIndex((a) => a.id === ata.id)
-      if (idx === -1) return [ata, ...prev]
+      const idx = prev.findIndex((item) => item.id === mapped.id)
+      if (idx === -1) return [mapped, ...prev]
       const next = [...prev]
-      next[idx] = ata
+      next[idx] = mapped
       return next
     })
+    setError(null)
+    return { ok: true as const, ata: mapped }
   }
 
-  function remove(id: string) {
-    setAtas((prev) => prev.filter((a) => a.id !== id))
+  async function remove(id: string) {
+    const { error: deleteError } = await supabase.from('atas').delete().eq('id', id)
+    if (deleteError) {
+      setError(deleteError.message)
+      return { ok: false as const, message: deleteError.message }
+    }
+    setAtas((prev) => prev.filter((ata) => ata.id !== id))
+    setError(null)
+    return { ok: true as const }
   }
 
   function getById(id: string) {
-    return atas.find((a) => a.id === id)
+    return atas.find((ata) => ata.id === id)
   }
 
-  return { atas, upsert, remove, getById }
+  return { atas, loading, error, upsert, remove, getById, reload }
 }

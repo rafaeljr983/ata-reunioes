@@ -1,16 +1,31 @@
 import { useMemo, useState } from 'react'
 import type { Ata, AtaStatus } from '../types'
 import { formatDate, openActionsCount } from '../utils'
+import { ChapelIllustration } from './ChapelIllustration'
 
 interface Props {
   atas: Ata[]
+  loading?: boolean
+  userName?: string
+  isAdmin?: boolean
   onOpen: (id: string) => void
   onCreate: () => void
+  onAdmin?: () => void
+  onSignOut: () => void
 }
 
 type Filter = 'todas' | AtaStatus
 
-export function HomeView({ atas, onOpen, onCreate }: Props) {
+export function HomeView({
+  atas,
+  loading,
+  userName,
+  isAdmin,
+  onOpen,
+  onCreate,
+  onAdmin,
+  onSignOut,
+}: Props) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('todas')
 
@@ -40,10 +55,24 @@ export function HomeView({ atas, onOpen, onCreate }: Props) {
     <div className="screen home">
       <header className="home__hero">
         <div className="home__atmosphere" aria-hidden="true" />
-        <p className="brand">Ata</p>
-        <h1 className="home__headline">Reuniões com registro claro</h1>
+        <div className="home__bar">
+          <div className="home__bar-actions home__bar-actions--end">
+            {isAdmin ? (
+              <button type="button" className="btn btn--ghost btn--on-hero btn--compact" onClick={onAdmin}>
+                Usuários
+              </button>
+            ) : null}
+            <button type="button" className="btn btn--ghost btn--on-hero btn--compact" onClick={onSignOut}>
+              Sair
+            </button>
+          </div>
+        </div>
+        <p className="brand brand--chapel">Ata de reuniões</p>
+        <h1 className="home__headline">Capela São João Batista</h1>
         <p className="home__sub">
-          Crie, finalize e acompanhe ações das suas atas — pensado para o celular.
+          {userName
+            ? `${userName}, veja e registre as atas compartilhadas da comunidade.`
+            : 'Crie, finalize e acompanhe as atas da Capela São João Batista.'}
         </p>
         <button type="button" className="btn btn--primary" onClick={onCreate}>
           Nova ata
@@ -53,6 +82,9 @@ export function HomeView({ atas, onOpen, onCreate }: Props) {
             {atas.length} ata{atas.length === 1 ? '' : 's'}
           </span>
           <span>{openActions} ação(ões) aberta(s)</span>
+        </div>
+        <div className="hero-chapel" aria-hidden="true">
+          <ChapelIllustration />
         </div>
       </header>
 
@@ -90,7 +122,11 @@ export function HomeView({ atas, onOpen, onCreate }: Props) {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="empty">
+            <p className="empty__title">Carregando atas…</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="empty">
             <p className="empty__title">Nenhuma ata por aqui</p>
             <p className="empty__text">

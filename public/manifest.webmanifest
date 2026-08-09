@@ -1,0 +1,20 @@
+{
+  "name": "Ata de reuniões — Capela São João Batista",
+  "short_name": "Ata Capela",
+  "description": "Atas de reuniões da Capela São João Batista",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#e7f1ec",
+  "theme_color": "#0F2F2C",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
