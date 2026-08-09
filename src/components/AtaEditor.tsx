@@ -61,22 +61,26 @@ export function AtaEditor({ initial, isNew, onCancel, onSave }: Props) {
           />
         </label>
 
-        <div className="field-row">
+        <div className="field-row field-row--datetime">
           <label className="field">
             <span className="field__label">Data</span>
-            <input
-              type="date"
-              value={draft.date}
-              onChange={(e) => update('date', e.target.value)}
-            />
+            <span className="field__control">
+              <input
+                type="date"
+                value={draft.date}
+                onChange={(e) => update('date', e.target.value)}
+              />
+            </span>
           </label>
           <label className="field">
             <span className="field__label">Horário</span>
-            <input
-              type="time"
-              value={draft.time}
-              onChange={(e) => update('time', e.target.value)}
-            />
+            <span className="field__control">
+              <input
+                type="time"
+                value={draft.time}
+                onChange={(e) => update('time', e.target.value)}
+              />
+            </span>
           </label>
         </div>
 
@@ -205,15 +209,17 @@ export function AtaEditor({ initial, isNew, onCancel, onSave }: Props) {
                     }}
                     placeholder="Responsável"
                   />
-                  <input
-                    type="date"
-                    value={action.dueDate}
-                    onChange={(e) => {
-                      const next = [...draft.actions]
-                      next[index] = { ...action, dueDate: e.target.value }
-                      update('actions', next)
-                    }}
-                  />
+                  <span className="field__control">
+                    <input
+                      type="date"
+                      value={action.dueDate}
+                      onChange={(e) => {
+                        const next = [...draft.actions]
+                        next[index] = { ...action, dueDate: e.target.value }
+                        update('actions', next)
+                      }}
+                    />
+                  </span>
                 </div>
                 <button
                   type="button"

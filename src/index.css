@@ -479,6 +479,9 @@ img {
 .detail__body,
 .editor__body {
   padding: 18px 16px 110px;
+  max-width: 100%;
+  overflow-x: clip;
+  box-sizing: border-box;
 }
 
 .detail__intro h1,
@@ -707,25 +710,70 @@ img {
   margin-bottom: 14px;
 }
 
+.field-row--datetime {
+  grid-template-columns: 1fr;
+}
+
 .field-row .field {
   min-width: 0;
   margin-bottom: 0;
+  max-width: 100%;
 }
 
+.field__control {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 12px;
+}
+
+.field__control:focus-within {
+  border-color: rgba(31, 122, 92, 0.45);
+  box-shadow: 0 0 0 3px rgba(31, 122, 92, 0.12);
+}
+
+.field__control input[type='date'],
+.field__control input[type='time'],
 .field-row input[type='date'],
 .field-row input[type='time'] {
-  min-width: 0;
-  max-width: 100%;
+  display: block;
   width: 100%;
-  padding: 12px 14px;
-  font-size: 1rem;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  padding: 12px 12px;
+  font-size: 16px;
+  line-height: 1.2;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-@media (min-width: 420px) {
-  .field-row {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
+.field__control input[type='date']:focus,
+.field__control input[type='time']:focus,
+.field-row input[type='date']:focus,
+.field-row input[type='time']:focus {
+  box-shadow: none;
+}
+
+.field__control input[type='date']::-webkit-date-and-time-value,
+.field__control input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+}
+
+.field__control input[type='date']::-webkit-calendar-picker-indicator,
+.field__control input[type='time']::-webkit-calendar-picker-indicator {
+  margin: 0;
+  padding: 0;
+  opacity: 0.65;
 }
 
 .tag-input {
