@@ -33,7 +33,11 @@ export function isValidCpf(value: string): boolean {
   return d1 === Number(cpf[9]) && d2 === Number(cpf[10])
 }
 
-/** Supabase Auth exige e-mail; usamos CPF como identidade sintética. */
+/**
+ * Supabase Auth exige e-mail. Usamos CPF como identidade sintética.
+ * O domínio precisa ter DNS/MX válidos — @atareunioes.com é rejeitado.
+ * Mantenha "Confirm email" desligado no Supabase (Authentication → Email).
+ */
 export function cpfToAuthEmail(cpf: string): string {
-  return `cpf${onlyDigits(cpf)}@atareunioes.com`
+  return `cpf${onlyDigits(cpf)}@gmail.com`
 }

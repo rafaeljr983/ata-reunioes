@@ -7,7 +7,7 @@ Web app mobile-first para criar, editar, finalizar e acompanhar ações de atas 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public**.
 3. No **SQL Editor**, execute o arquivo [`supabase/schema.sql`](supabase/schema.sql).
-4. Em **Authentication → Providers → Email**, para desenvolvimento desative **Confirm email** (senão o cadastro fica pendente de confirmação de e-mail).
+4. Em **Authentication → Providers → Email**, **desative Confirm email** (obrigatório). Com confirmação ligada o cadastro falha, porque o app usa e-mail sintético só para o Auth.
 5. Copie as variáveis de ambiente:
 
 ```bash
@@ -23,9 +23,11 @@ VITE_SUPABASE_ANON_KEY=sua_anon_key_aqui
 
 ## Login por CPF
 
-O app usa **CPF + senha**. Internamente o Supabase Auth ainda usa um e-mail sintético (`cpf{CPF}@atareunioes.com`).
+O app usa **CPF + senha**. Internamente o Supabase Auth usa um e-mail sintético (`cpf{CPF}@gmail.com`).
 
 Se você já rodou o `schema.sql` antigo, execute também [`supabase/migration_cpf.sql`](supabase/migration_cpf.sql).
+
+Se a conta admin foi criada com o formato antigo (`@atareunioes.com`), rode também [`supabase/migration_fix_auth_email.sql`](supabase/migration_fix_auth_email.sql) depois de publicar esta versão.
 
 ## Primeiro administrador
 
@@ -59,6 +61,14 @@ Uma **URL** é o endereço do site na internet (ex.: `https://ata-capela.onrende
 7. No Supabase → **Authentication → URL Configuration**, coloque a URL do Render em **Site URL** (e em Redirect URLs, se pedir).
 
 Pronto: o Render gera um link tipo `https://seu-app.onrender.com`.
+
+## Atas compartilhadas
+
+Todos os usuários **aprovados** veem as mesmas atas. Se alguém cria uma ata e outro não vê:
+
+1. No SQL Editor, rode [`supabase/migration_share_atas.sql`](supabase/migration_share_atas.sql)
+2. Em **Database → Replication**, confira se a tabela `atas` está no Realtime
+3. Peça para a outra pessoa fechar e abrir o app (ou voltar para a tela)
 
 ## Offline e sincronização
 

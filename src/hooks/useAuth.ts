@@ -10,9 +10,17 @@ import type { Profile, ProfileRow, UserStatus } from '../types'
 function authMessage(message: string): string {
   const lower = message.toLowerCase()
   if (lower.includes('invalid login')) return 'CPF ou senha inválidos'
-  if (lower.includes('already registered')) return 'Este CPF já está cadastrado'
+  if (lower.includes('already registered') || lower.includes('user already')) {
+    return 'Este CPF já está cadastrado'
+  }
   if (lower.includes('email not confirmed')) {
-    return 'Conta ainda não confirmada. Desative "Confirm email" no Supabase (dev).'
+    return 'Conta ainda não confirmada. Desative "Confirm email" no Supabase.'
+  }
+  if (lower.includes('rate limit')) {
+    return 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente de novo.'
+  }
+  if (lower.includes('is invalid') || lower.includes('email_address_invalid')) {
+    return 'Cadastro bloqueado pelo Supabase. Desative "Confirm email" em Authentication → Providers → Email.'
   }
   return message
 }

@@ -112,7 +112,17 @@ export function useAtas(enabled: boolean, userId: string | null) {
 
     const mapped = (data as AtaRow[]).map(rowToAta)
     markSynced(mapped.map((ata) => ata.id))
-    setAndCache(mapped)
+
+    // Mantém atas ainda na fila offline (ainda não chegaram no banco)
+    const pendingUpserts = loadQueue()
+      .filter((op): op is Extract<PendingOp, { type: 'upsert' }> => op.type === 'upsert')
+      .map((op) => op.ata)
+    const byId = new Map(mapped.map((ata) => [ata.id, ata]))
+    for (const ata of pendingUpserts) {
+      if (!byId.has(ata.id)) byId.set(ata.id, ata)
+    }
+
+    setAndCache([...byId.values()])
     setError(null)
     setPendingCount(loadQueue().length)
     setLoading(false)
@@ -121,6 +131,26 @@ export function useAtas(enabled: boolean, userId: string | null) {
   useEffect(() => {
     if (!enabled) return
     void reload()
+  }, [enabled, reload])
+
+  // Atualiza a lista quando outra pessoa cria/edita/exclui
+  useEffect(() => {
+    if (!enabled || !isOnline()) return
+
+    const channel = supabase
+      .channel('atas-shared')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'atas' },
+        () => {
+          void reload()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
   }, [enabled, reload])
 
   useEffect(() => {
@@ -133,12 +163,21 @@ export function useAtas(enabled: boolean, userId: string | null) {
       setPendingCount(loadQueue().length)
       setLoading(false)
     }
+    function handleVisible() {
+      if (document.visibilityState !== 'visible') return
+      if (!enabled || !isOnline()) return
+      void reload()
+    }
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
+    document.addEventListener('visibilitychange', handleVisible)
+    window.addEventListener('focus', handleVisible)
     return () => {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
+      document.removeEventListener('visibilitychange', handleVisible)
+      window.removeEventListener('focus', handleVisible)
     }
   }, [enabled, reload])
 

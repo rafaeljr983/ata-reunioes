@@ -192,6 +192,14 @@ create policy "atas_delete_access"
   to authenticated
   using (public.has_access());
 
+-- Realtime: mudanças nas atas chegam nos outros aparelhos
+do $$
+begin
+  alter publication supabase_realtime add table public.atas;
+exception
+  when duplicate_object then null;
+end $$;
+
 -- ---------------------------------------------------------------------------
 -- O primeiro cadastro vira admin automaticamente.
 -- Se precisar promover depois por CPF:

@@ -7,7 +7,10 @@ alter table public.profiles
 update public.profiles
 set cpf = split_part(email, '@', 1)
 where (cpf is null or cpf = '')
-  and email like 'cpf%@atareunioes.com';
+  and (
+    email like 'cpf%@atareunioes.com'
+    or email like 'cpf%@gmail.com'
+  );
 
 create unique index if not exists profiles_cpf_unique
   on public.profiles (cpf)
