@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ataToRow, rowToAta } from '../lib/mappers'
+import { rowToAta } from '../lib/mappers'
 import {
   clearQueue,
   enqueueDelete,
@@ -12,6 +12,7 @@ import {
   saveQueue,
   type PendingOp,
 } from '../lib/offlineStore'
+import { saveAtaToSupabase } from '../lib/saveAta'
 import { supabase } from '../lib/supabase'
 import type { Ata, AtaRow } from '../types'
 
@@ -49,14 +50,15 @@ export function useAtas(enabled: boolean, userId: string | null) {
 
     setSyncing(true)
     const remaining: PendingOp[] = []
+    let lastError: string | null = null
 
     for (const op of queue) {
       if (op.type === 'upsert') {
-        const payload = ataToRow(op.ata, op.userId)
-        const { error: upsertError } = await supabase.from('atas').upsert(payload)
-        if (upsertError) {
+        // Usa o usuário da sessão atual (não o userId antigo da fila)
+        const { error: saveError } = await saveAtaToSupabase(op.ata, userId)
+        if (saveError) {
           remaining.push(op)
-          setError(upsertError.message)
+          lastError = saveError
         } else {
           markSynced([op.ata.id])
         }
@@ -64,7 +66,7 @@ export function useAtas(enabled: boolean, userId: string | null) {
         const { error: deleteError } = await supabase.from('atas').delete().eq('id', op.ataId)
         if (deleteError) {
           remaining.push(op)
-          setError(deleteError.message)
+          lastError = deleteError.message
         }
       }
     }
@@ -73,7 +75,9 @@ export function useAtas(enabled: boolean, userId: string | null) {
     else saveQueue(remaining)
     setPendingCount(remaining.length)
     setSyncing(false)
-    return { ok: remaining.length === 0, flushed: queue.length - remaining.length }
+    if (lastError) setError(lastError)
+    else if (remaining.length === 0) setError(null)
+    return { ok: remaining.length === 0, flushed: queue.length - remaining.length, error: lastError }
   }, [enabled, userId])
 
   const reload = useCallback(async () => {
@@ -81,7 +85,6 @@ export function useAtas(enabled: boolean, userId: string | null) {
       return
     }
 
-    // Sempre mostra cache primeiro (sem tela de loading)
     const cached = loadCachedAtas()
     setAtas(sortAtas(cached))
     setPendingCount(loadQueue().length)
@@ -93,10 +96,9 @@ export function useAtas(enabled: boolean, userId: string | null) {
     }
 
     setOnline(true)
-    // Só mostra loading se não há cache
     if (!cached.length) setLoading(true)
 
-    await flushQueue()
+    const flushResult = await flushQueue()
 
     const { data, error: queryError } = await supabase
       .from('atas')
@@ -113,7 +115,6 @@ export function useAtas(enabled: boolean, userId: string | null) {
     const mapped = (data as AtaRow[]).map(rowToAta)
     markSynced(mapped.map((ata) => ata.id))
 
-    // Mantém atas ainda na fila offline (ainda não chegaram no banco)
     const pendingUpserts = loadQueue()
       .filter((op): op is Extract<PendingOp, { type: 'upsert' }> => op.type === 'upsert')
       .map((op) => op.ata)
@@ -123,7 +124,7 @@ export function useAtas(enabled: boolean, userId: string | null) {
     }
 
     setAndCache([...byId.values()])
-    setError(null)
+    if (flushResult.ok) setError(null)
     setPendingCount(loadQueue().length)
     setLoading(false)
   }, [enabled, flushQueue, setAndCache])
@@ -133,7 +134,6 @@ export function useAtas(enabled: boolean, userId: string | null) {
     void reload()
   }, [enabled, reload])
 
-  // Atualiza a lista quando outra pessoa cria/edita/exclui
   useEffect(() => {
     if (!enabled || !isOnline()) return
 
@@ -196,26 +196,25 @@ export function useAtas(enabled: boolean, userId: string | null) {
       return { ok: true as const, ata, offline: true as const }
     }
 
-    const payload = ataToRow(ata, userId)
-    const { data, error: upsertError } = await supabase
-      .from('atas')
-      .upsert(payload)
-      .select('*')
-      .single()
+    const { ata: saved, error: saveError } = await saveAtaToSupabase(ata, userId)
 
-    if (upsertError) {
+    if (saveError || !saved) {
       const queue = enqueueUpsert(ata, userId)
       setPendingCount(queue.length)
-      setError(upsertError.message)
-      return { ok: true as const, ata, offline: true as const, message: 'Salvo offline; sincroniza depois' }
+      setError(saveError ?? 'Falha ao salvar')
+      return {
+        ok: true as const,
+        ata,
+        offline: true as const,
+        message: 'Salvo no aparelho · falhou o envio ao servidor',
+      }
     }
 
-    const mapped = rowToAta(data as AtaRow)
-    markSynced([mapped.id])
-    setAndCache(applyLocalUpsert(nextList, mapped))
+    markSynced([saved.id])
+    setAndCache(applyLocalUpsert(nextList, saved))
     setError(null)
     setPendingCount(loadQueue().length)
-    return { ok: true as const, ata: mapped }
+    return { ok: true as const, ata: saved }
   }
 
   async function remove(id: string) {

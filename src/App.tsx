@@ -27,6 +27,8 @@ export default function App() {
     pendingCount,
     online,
     syncing,
+    error: atasError,
+    reload: reloadAtas,
   } = useAtas(auth.hasAccess, userId)
   const [authScreen, setAuthScreen] = useState<AuthScreen>('login')
   const [view, setView] = useState<View>({ name: 'home' })
@@ -267,6 +269,8 @@ export default function App() {
         online={online}
         pendingCount={pendingCount}
         syncing={syncing}
+        syncError={atasError}
+        onRetrySync={() => void reloadAtas()}
         onOpen={(id) => setView({ name: 'detail', ataId: id })}
         onCreate={() => setView({ name: 'editor', ataId: null })}
         onDashboard={() => setView({ name: 'dashboard' })}

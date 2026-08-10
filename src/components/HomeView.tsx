@@ -11,6 +11,8 @@ interface Props {
   online?: boolean
   pendingCount?: number
   syncing?: boolean
+  syncError?: string | null
+  onRetrySync?: () => void
   onOpen: (id: string) => void
   onCreate: () => void
   onDashboard?: () => void
@@ -28,6 +30,8 @@ export function HomeView({
   online = true,
   pendingCount = 0,
   syncing = false,
+  syncError = null,
+  onRetrySync,
   onOpen,
   onCreate,
   onDashboard,
@@ -101,18 +105,27 @@ export function HomeView({
         </div>
       </header>
 
-      {!online || pendingCount > 0 || syncing ? (
+      {!online || pendingCount > 0 || syncing || syncError ? (
         <div
-          className={`sync-banner${!online ? ' sync-banner--offline' : ''}${syncing ? ' sync-banner--syncing' : ''}`}
+          className={`sync-banner${!online || syncError ? ' sync-banner--offline' : ''}${syncing ? ' sync-banner--syncing' : ''}`}
           role="status"
         >
-          {syncing
-            ? 'Sincronizando alterações…'
-            : !online
-              ? pendingCount > 0
-                ? `Sem internet · ${pendingCount} alteração(ões) serão enviadas depois`
-                : 'Sem internet · você pode ler e escrever atas'
-              : `${pendingCount} alteração(ões) aguardando envio`}
+          <span>
+            {syncing
+              ? 'Sincronizando alterações…'
+              : syncError
+                ? `Falha ao enviar: ${syncError}`
+                : !online
+                  ? pendingCount > 0
+                    ? `Sem internet · ${pendingCount} alteração(ões) serão enviadas depois`
+                    : 'Sem internet · você pode ler e escrever atas'
+                  : `${pendingCount} alteração(ões) aguardando envio`}
+          </span>
+          {onRetrySync && (pendingCount > 0 || syncError) && !syncing ? (
+            <button type="button" className="text-btn sync-banner__retry" onClick={onRetrySync}>
+              Tentar novamente
+            </button>
+          ) : null}
         </div>
       ) : null}
 
