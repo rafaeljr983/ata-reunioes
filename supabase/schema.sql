@@ -210,7 +210,8 @@ set search_path = public
 as $$
   select email
   from public.profiles
-  where lower(trim(name)) = lower(trim(p_name))
+  where regexp_replace(lower(trim(name)), '\s+', ' ', 'g')
+      = regexp_replace(lower(trim(p_name)), '\s+', ' ', 'g')
     and coalesce(trim(name), '') <> ''
   order by created_at asc
   limit 1;

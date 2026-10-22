@@ -151,36 +151,43 @@ export function useAuth() {
     }
   }, [fetchProfile])
 
-  async function signIn(name: string, password: string) {
+  async function signIn(nameOrCpf: string, password: string) {
     setError(null)
-    const trimmed = name.trim()
+    const trimmed = nameOrCpf.trim()
     if (!trimmed) {
       const message = 'Informe o nome cadastrado'
       setError(message)
       return { ok: false as const, message }
     }
 
-    if (!isOnline()) {
-      const message = 'É preciso estar online para entrar com o nome'
-      setError(message)
-      return { ok: false as const, message }
+    // Aceita CPF no mesmo campo (útil se o nome não bater exatamente)
+    let authEmail: string | null = null
+    if (isValidCpf(trimmed)) {
+      authEmail = cpfToAuthEmail(trimmed)
+    } else {
+      if (!isOnline()) {
+        const message = 'É preciso estar online para entrar com o nome'
+        setError(message)
+        return { ok: false as const, message }
+      }
+
+      const { data, error: lookupError } = await supabase.rpc('login_email_for_name', {
+        p_name: trimmed,
+      })
+
+      if (lookupError) {
+        const message = lookupError.message.toLowerCase().includes('function')
+          ? 'Atualize o banco: rode supabase/migration_login_by_name.sql no Supabase.'
+          : lookupError.message
+        setError(message)
+        return { ok: false as const, message }
+      }
+
+      authEmail = typeof data === 'string' && data ? data : null
     }
 
-    const { data: authEmail, error: lookupError } = await supabase.rpc(
-      'login_email_for_name',
-      { p_name: trimmed },
-    )
-
-    if (lookupError) {
-      const message = lookupError.message.includes('function')
-        ? 'Atualize o banco: rode supabase/migration_login_by_name.sql no Supabase.'
-        : lookupError.message
-      setError(message)
-      return { ok: false as const, message }
-    }
-
-    if (!authEmail || typeof authEmail !== 'string') {
-      const message = 'Nome ou senha inválidos'
+    if (!authEmail) {
+      const message = 'Nome ou senha inválidos. Use o nome exatamente como no cadastro.'
       setError(message)
       return { ok: false as const, message }
     }
@@ -190,6 +197,18 @@ export function useAuth() {
       password,
     })
     if (authError) {
+      // Contas antigas podem ainda estar com @atareunioes.com
+      if (
+        authEmail.endsWith('@gmail.com') &&
+        authError.message.toLowerCase().includes('invalid login')
+      ) {
+        const legacyEmail = authEmail.replace('@gmail.com', '@atareunioes.com')
+        const legacy = await supabase.auth.signInWithPassword({
+          email: legacyEmail,
+          password,
+        })
+        if (!legacy.error) return { ok: true as const }
+      }
       const message = authMessage(authError.message)
       setError(message)
       return { ok: false as const, message }

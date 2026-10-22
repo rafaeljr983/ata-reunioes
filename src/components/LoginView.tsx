@@ -40,7 +40,7 @@ export function LoginView({ onSubmit, onGoSignUp }: Props) {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Seu nome cadastrado"
+            placeholder="Nome (ou CPF) cadastrado"
           />
         </label>
 
