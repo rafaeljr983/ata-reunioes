@@ -109,18 +109,24 @@ export function AtaDetail({
                 .filter((a) => a.description)
                 .map((action) => (
                   <li key={action.id}>
-                    <label className={`action${action.done ? ' is-done' : ''}`}>
+                    <label
+                      className={`action${action.done ? ' action--done' : ' action--pending'}`}
+                    >
                       <input
                         type="checkbox"
                         checked={action.done}
                         onChange={() => onToggleAction(action.id)}
                       />
                       <span>
+                        <span className="action__status" aria-hidden="true">
+                          {action.done ? '✓' : '•'}
+                        </span>
                         <strong>{action.description}</strong>
-                        <em>
+                        <em className="action__meta">
                           {[action.assignee, action.dueDate ? `prazo ${action.dueDate}` : '']
                             .filter(Boolean)
                             .join(' · ') || 'Sem responsável'}
+                          {!action.done ? ' · pendente' : ''}
                         </em>
                         {action.done && (action.completedBy || action.completedAt) ? (
                           <em className="action__done-by">
