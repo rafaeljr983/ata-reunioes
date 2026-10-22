@@ -33,11 +33,23 @@ export function isValidCpf(value: string): boolean {
   return d1 === Number(cpf[9]) && d2 === Number(cpf[10])
 }
 
-/**
- * Supabase Auth exige e-mail. Usamos CPF como identidade sintética.
- * O domínio precisa ter DNS/MX válidos — @atareunioes.com é rejeitado.
- * Mantenha "Confirm email" desligado no Supabase (Authentication → Email).
- */
+/** Contas antigas ainda usam este formato. */
 export function cpfToAuthEmail(cpf: string): string {
   return `cpf${onlyDigits(cpf)}@gmail.com`
+}
+
+/**
+ * E-mail sintético para o Auth (cadastro só com nome).
+ * Mantenha "Confirm email" desligado no Supabase.
+ */
+export function nameToAuthEmail(name: string): string {
+  const slug = name
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 24)
+  const suffix = crypto.randomUUID().replace(/-/g, '').slice(0, 10)
+  const local = `${slug || 'user'}${suffix}`
+  return `${local}@gmail.com`
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { getBootState, readLocalSession } from '../lib/authBoot'
-import { cpfToAuthEmail, isValidCpf, onlyDigits } from '../lib/cpf'
+import { cpfToAuthEmail, isValidCpf, nameToAuthEmail } from '../lib/cpf'
 import { rowToProfile } from '../lib/mappers'
 import { isOnline, loadCachedProfile, saveCachedProfile } from '../lib/offlineStore'
 import { supabase } from '../lib/supabase'
@@ -11,7 +11,7 @@ function authMessage(message: string): string {
   const lower = message.toLowerCase()
   if (lower.includes('invalid login')) return 'Nome ou senha inválidos'
   if (lower.includes('already registered') || lower.includes('user already')) {
-    return 'Este CPF já está cadastrado'
+    return 'Esta conta já está cadastrada'
   }
   if (lower.includes('email not confirmed')) {
     return 'Conta ainda não confirmada. Desative "Confirm email" no Supabase.'
@@ -216,22 +216,32 @@ export function useAuth() {
     return { ok: true as const }
   }
 
-  async function signUp(name: string, cpf: string, password: string) {
+  async function signUp(name: string, password: string) {
     setError(null)
-    if (!isValidCpf(cpf)) {
-      const message = 'Informe um CPF válido'
+    const trimmed = name.trim()
+    if (trimmed.length < 2) {
+      const message = 'Informe seu nome completo'
       setError(message)
       return { ok: false as const, message }
     }
 
-    const digits = onlyDigits(cpf)
+    if (isOnline()) {
+      const { data: existingEmail } = await supabase.rpc('login_email_for_name', {
+        p_name: trimmed,
+      })
+      if (typeof existingEmail === 'string' && existingEmail) {
+        const message = 'Já existe uma conta com este nome. Escolha outro ou faça login.'
+        setError(message)
+        return { ok: false as const, message }
+      }
+    }
+
     const { data, error: authError } = await supabase.auth.signUp({
-      email: cpfToAuthEmail(digits),
+      email: nameToAuthEmail(trimmed),
       password,
       options: {
         data: {
-          name: name.trim(),
-          cpf: digits,
+          name: trimmed,
         },
       },
     })

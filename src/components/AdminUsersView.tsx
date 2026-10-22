@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { formatCpf } from '../lib/cpf'
 import type { Profile, UserStatus } from '../types'
 import { formatDate } from '../utils'
 
@@ -88,9 +87,6 @@ export function AdminUsersView({
                     <li key={profile.id} className="admin__card">
                       <div>
                         <p className="admin__name">{profile.name || 'Sem nome'}</p>
-                        <p className="admin__meta">
-                          CPF {profile.cpf ? formatCpf(profile.cpf) : '—'}
-                        </p>
                         <p className="admin__meta">Desde {formatDate(profile.createdAt.slice(0, 10))}</p>
                       </div>
                       <div className="admin__actions">
@@ -131,9 +127,7 @@ export function AdminUsersView({
                           {profile.id === currentUserId ? ' (você)' : ''}
                           {profile.role === 'admin' ? ' · Admin' : ''}
                         </p>
-                        <p className="admin__meta">
-                          CPF {profile.cpf ? formatCpf(profile.cpf) : '—'}
-                        </p>
+                        <p className="admin__meta">Desde {formatDate(profile.createdAt.slice(0, 10))}</p>
                         <span className={`status status--${profile.status}`}>
                           {statusLabel(profile.status)}
                         </span>

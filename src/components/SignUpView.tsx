@@ -1,20 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { formatCpf } from '../lib/cpf'
 import { AuthHero } from './AuthHero'
 
 interface Props {
-  onSubmit: (
-    name: string,
-    cpf: string,
-    password: string,
-  ) => Promise<{ ok: boolean; message?: string }>
+  onSubmit: (name: string, password: string) => Promise<{ ok: boolean; message?: string }>
   onGoLogin: () => void
 }
 
 export function SignUpView({ onSubmit, onGoLogin }: Props) {
   const [name, setName] = useState('')
-  const [cpf, setCpf] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +17,7 @@ export function SignUpView({ onSubmit, onGoLogin }: Props) {
     event.preventDefault()
     setBusy(true)
     setError(null)
-    const result = await onSubmit(name, cpf, password)
+    const result = await onSubmit(name, password)
     if (!result.ok) {
       setError(result.message ?? 'Não foi possível cadastrar')
     }
@@ -46,21 +40,7 @@ export function SignUpView({ onSubmit, onGoLogin }: Props) {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Seu nome"
-          />
-        </label>
-
-        <label className="field">
-          <span className="field__label">CPF</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="username"
-            required
-            value={cpf}
-            onChange={(e) => setCpf(formatCpf(e.target.value))}
-            placeholder="000.000.000-00"
-            maxLength={14}
+            placeholder="Seu nome completo"
           />
         </label>
 

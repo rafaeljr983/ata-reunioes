@@ -84,7 +84,7 @@ export default function App() {
         {authScreen === 'signup' ? (
           <SignUpView
             onGoLogin={() => setAuthScreen('login')}
-            onSubmit={async (name, cpf, password) => auth.signUp(name, cpf, password)}
+            onSubmit={async (name, password) => auth.signUp(name, password)}
           />
         ) : (
           <LoginView

@@ -23,7 +23,7 @@ VITE_SUPABASE_ANON_KEY=sua_anon_key_aqui
 
 ## Login por CPF
 
-O **login** usa **nome + senha**. O **cadastro** ainda pede CPF (identidade única). Internamente o Supabase Auth usa um e-mail sintético (`cpf{CPF}@gmail.com`).
+O app usa **nome + senha** no login e no cadastro. Internamente o Supabase Auth usa um e-mail sintético.
 
 Para o login por nome funcionar, rode também [`supabase/migration_login_by_name.sql`](supabase/migration_login_by_name.sql).
 
