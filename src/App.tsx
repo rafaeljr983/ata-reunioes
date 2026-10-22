@@ -89,7 +89,7 @@ export default function App() {
         ) : (
           <LoginView
             onGoSignUp={() => setAuthScreen('signup')}
-            onSubmit={async (cpf, password) => auth.signIn(cpf, password)}
+            onSubmit={async (name, password) => auth.signIn(name, password)}
           />
         )}
       </div>

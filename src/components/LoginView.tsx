@@ -1,15 +1,14 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { formatCpf } from '../lib/cpf'
 import { AuthHero } from './AuthHero'
 
 interface Props {
-  onSubmit: (cpf: string, password: string) => Promise<{ ok: boolean; message?: string }>
+  onSubmit: (name: string, password: string) => Promise<{ ok: boolean; message?: string }>
   onGoSignUp: () => void
 }
 
 export function LoginView({ onSubmit, onGoSignUp }: Props) {
-  const [cpf, setCpf] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +17,7 @@ export function LoginView({ onSubmit, onGoSignUp }: Props) {
     event.preventDefault()
     setBusy(true)
     setError(null)
-    const result = await onSubmit(cpf, password)
+    const result = await onSubmit(name, password)
     if (!result.ok) {
       setError(result.message ?? 'Não foi possível entrar')
     }
@@ -29,21 +28,19 @@ export function LoginView({ onSubmit, onGoSignUp }: Props) {
     <div className="screen auth">
       <AuthHero
         actionTitle="Entrar no sistema"
-        subtitle="Acesse as atas compartilhadas da comunidade com seu CPF."
+        subtitle="Acesse as atas compartilhadas da comunidade com seu nome."
       />
 
       <form className="auth__form" onSubmit={(e) => void handleSubmit(e)}>
         <label className="field">
-          <span className="field__label">CPF</span>
+          <span className="field__label">Nome</span>
           <input
             type="text"
-            inputMode="numeric"
             autoComplete="username"
             required
-            value={cpf}
-            onChange={(e) => setCpf(formatCpf(e.target.value))}
-            placeholder="000.000.000-00"
-            maxLength={14}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Seu nome cadastrado"
           />
         </label>
 

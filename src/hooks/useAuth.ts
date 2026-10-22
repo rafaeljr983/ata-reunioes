@@ -9,7 +9,7 @@ import type { Profile, ProfileRow, UserStatus } from '../types'
 
 function authMessage(message: string): string {
   const lower = message.toLowerCase()
-  if (lower.includes('invalid login')) return 'CPF ou senha inválidos'
+  if (lower.includes('invalid login')) return 'Nome ou senha inválidos'
   if (lower.includes('already registered') || lower.includes('user already')) {
     return 'Este CPF já está cadastrado'
   }
@@ -151,16 +151,42 @@ export function useAuth() {
     }
   }, [fetchProfile])
 
-  async function signIn(cpf: string, password: string) {
+  async function signIn(name: string, password: string) {
     setError(null)
-    if (!isValidCpf(cpf)) {
-      const message = 'Informe um CPF válido'
+    const trimmed = name.trim()
+    if (!trimmed) {
+      const message = 'Informe o nome cadastrado'
+      setError(message)
+      return { ok: false as const, message }
+    }
+
+    if (!isOnline()) {
+      const message = 'É preciso estar online para entrar com o nome'
+      setError(message)
+      return { ok: false as const, message }
+    }
+
+    const { data: authEmail, error: lookupError } = await supabase.rpc(
+      'login_email_for_name',
+      { p_name: trimmed },
+    )
+
+    if (lookupError) {
+      const message = lookupError.message.includes('function')
+        ? 'Atualize o banco: rode supabase/migration_login_by_name.sql no Supabase.'
+        : lookupError.message
+      setError(message)
+      return { ok: false as const, message }
+    }
+
+    if (!authEmail || typeof authEmail !== 'string') {
+      const message = 'Nome ou senha inválidos'
       setError(message)
       return { ok: false as const, message }
     }
 
     const { error: authError } = await supabase.auth.signInWithPassword({
-      email: cpfToAuthEmail(cpf),
+      email: authEmail,
       password,
     })
     if (authError) {
