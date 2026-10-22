@@ -64,6 +64,12 @@ Uma **URL** é o endereço do site na internet (ex.: `https://ata-capela.onrende
 
 Pronto: o Render gera um link tipo `https://seu-app.onrender.com`.
 
+## Rastreio de edições
+
+Cada conclusão de ação e cada edição da ata grava **quem** fez e **quando**. Na tela da ata aparecem a última edição e o histórico.
+
+Se o banco já existia, rode [`supabase/migration_edit_tracking.sql`](supabase/migration_edit_tracking.sql).
+
 ## Atas compartilhadas
 
 Todos os usuários **aprovados** veem as mesmas atas. Se alguém cria uma ata e outro não vê:

@@ -10,6 +10,7 @@ import { RejectedView } from './components/RejectedView'
 import { SignUpView } from './components/SignUpView'
 import { useAtas } from './hooks/useAtas'
 import { useAuth } from './hooks/useAuth'
+import { withEditMeta } from './lib/editMeta'
 import type { View } from './types'
 import { ataToPlainText, createEmptyAta } from './utils'
 
@@ -18,6 +19,7 @@ type AuthScreen = 'login' | 'signup'
 export default function App() {
   const auth = useAuth()
   const userId = auth.session?.user.id ?? null
+  const editorName = auth.profile?.name?.trim() || 'Usuário'
   const {
     atas,
     loading: atasLoading,
@@ -173,7 +175,12 @@ export default function App() {
             setView(existing ? { name: 'detail', ataId: existing.id } : { name: 'home' })
           }
           onSave={(ata) => {
-            void upsert({ ...ata, createdBy: ata.createdBy ?? userId }).then((result) => {
+            const saved = withEditMeta(
+              { ...ata, createdBy: ata.createdBy ?? userId },
+              editorName,
+              existing ? 'Editou o conteúdo da ata' : 'Criou a ata',
+            )
+            void upsert(saved).then((result) => {
               if (!result.ok) {
                 showToast(result.message)
                 return
@@ -183,7 +190,7 @@ export default function App() {
                   ? 'Ata salva no aparelho · sincroniza depois'
                   : 'Ata salva',
               )
-              setView({ name: 'detail', ataId: ata.id })
+              setView({ name: 'detail', ataId: saved.id })
             })
           }}
         />
@@ -214,21 +221,36 @@ export default function App() {
           onBack={() => setView({ name: 'home' })}
           onEdit={() => setView({ name: 'editor', ataId: ata.id })}
           onToggleAction={(actionId) => {
-            void upsert({
-              ...ata,
-              updatedAt: new Date().toISOString(),
-              actions: ata.actions.map((action) =>
-                action.id === actionId ? { ...action, done: !action.done } : action,
-              ),
-            })
+            const target = ata.actions.find((action) => action.id === actionId)
+            const nextDone = !target?.done
+            const now = new Date().toISOString()
+            const nextAta = withEditMeta(
+              {
+                ...ata,
+                actions: ata.actions.map((action) =>
+                  action.id === actionId
+                    ? {
+                        ...action,
+                        done: nextDone,
+                        completedBy: nextDone ? editorName : null,
+                        completedAt: nextDone ? now : null,
+                      }
+                    : action,
+                ),
+              },
+              editorName,
+              nextDone ? 'Concluiu uma ação' : 'Reabriu uma ação',
+            )
+            void upsert(nextAta)
           }}
           onToggleStatus={() => {
             const nextStatus = ata.status === 'finalizada' ? 'rascunho' : 'finalizada'
-            void upsert({
-              ...ata,
-              status: nextStatus,
-              updatedAt: new Date().toISOString(),
-            }).then((result) => {
+            const nextAta = withEditMeta(
+              { ...ata, status: nextStatus },
+              editorName,
+              nextStatus === 'finalizada' ? 'Finalizou a ata' : 'Reabriu a ata',
+            )
+            void upsert(nextAta).then((result) => {
               if (!result.ok) {
                 showToast(result.message)
                 return

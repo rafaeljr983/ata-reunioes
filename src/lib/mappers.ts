@@ -1,4 +1,4 @@
-import type { ActionItem, Ata, AtaRow, Profile, ProfileRow } from '../types'
+import type { ActionItem, Ata, AtaEditEntry, AtaRow, Profile, ProfileRow } from '../types'
 
 function asActions(value: ActionItem[] | null | undefined): ActionItem[] {
   if (!Array.isArray(value)) return []
@@ -8,6 +8,17 @@ function asActions(value: ActionItem[] | null | undefined): ActionItem[] {
     assignee: String(item.assignee ?? ''),
     dueDate: String(item.dueDate ?? ''),
     done: Boolean(item.done),
+    completedBy: item.completedBy ? String(item.completedBy) : null,
+    completedAt: item.completedAt ? String(item.completedAt) : null,
+  }))
+}
+
+function asEditHistory(value: AtaEditEntry[] | null | undefined): AtaEditEntry[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => ({
+    at: String(item.at ?? ''),
+    by: String(item.by ?? ''),
+    summary: String(item.summary ?? ''),
   }))
 }
 
@@ -28,6 +39,8 @@ export function rowToAta(row: AtaRow): Ata {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    editHistory: asEditHistory(row.edit_history),
   }
 }
 
@@ -46,7 +59,9 @@ export function ataToRow(ata: Ata, userId: string) {
     actions: ata.actions,
     status: ata.status,
     created_by: ata.createdBy ?? userId,
-    updated_at: new Date().toISOString(),
+    updated_at: ata.updatedAt || new Date().toISOString(),
+    updated_by: ata.updatedBy ?? null,
+    edit_history: ata.editHistory ?? [],
   }
 }
 

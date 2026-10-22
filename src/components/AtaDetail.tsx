@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import type { Ata } from '../types'
-import { ataToPlainText, formatDateLong, openActionsCount } from '../utils'
+import { ataToPlainText, formatDateLong, formatDateTime, openActionsCount } from '../utils'
 
 interface Props {
   ata: Ata
@@ -21,6 +22,8 @@ export function AtaDetail({
   onShare,
 }: Props) {
   const pending = openActionsCount(ata)
+  const history = ata.editHistory ?? []
+  const [showHistory, setShowHistory] = useState(false)
 
   return (
     <div className="screen detail">
@@ -51,6 +54,12 @@ export function AtaDetail({
                 .join(' · ')}
             </p>
           )}
+          {ata.updatedBy ? (
+            <p className="detail__meta">
+              Última edição por <strong>{ata.updatedBy}</strong>
+              {ata.updatedAt ? ` · ${formatDateTime(ata.updatedAt)}` : ''}
+            </p>
+          ) : null}
         </div>
 
         <section className="block">
@@ -113,6 +122,13 @@ export function AtaDetail({
                             .filter(Boolean)
                             .join(' · ') || 'Sem responsável'}
                         </em>
+                        {action.done && (action.completedBy || action.completedAt) ? (
+                          <em className="action__done-by">
+                            Concluída
+                            {action.completedBy ? ` por ${action.completedBy}` : ''}
+                            {action.completedAt ? ` · ${formatDateTime(action.completedAt)}` : ''}
+                          </em>
+                        ) : null}
                       </span>
                     </label>
                   </li>
@@ -120,6 +136,38 @@ export function AtaDetail({
             </ul>
           ) : (
             <p className="muted">Nenhuma ação definida.</p>
+          )}
+        </section>
+
+        <section className="block">
+          <div className="block__head">
+            <h2>Histórico de edições</h2>
+            {history.length > 0 ? (
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() => setShowHistory((open) => !open)}
+              >
+                {showHistory ? 'Ocultar' : `Ver (${history.length})`}
+              </button>
+            ) : null}
+          </div>
+          {history.length === 0 ? (
+            <p className="muted">Ainda não há edições registradas.</p>
+          ) : showHistory ? (
+            <ul className="edit-history">
+              {history.map((entry, index) => (
+                <li key={`${entry.at}-${index}`}>
+                  <strong>{entry.by}</strong>
+                  <span>{entry.summary}</span>
+                  <em>{formatDateTime(entry.at)}</em>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">
+              Última: {history[0].by} · {history[0].summary} · {formatDateTime(history[0].at)}
+            </p>
           )}
         </section>
       </article>

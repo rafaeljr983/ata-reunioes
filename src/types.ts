@@ -9,6 +9,16 @@ export interface ActionItem {
   assignee: string
   dueDate: string
   done: boolean
+  /** Nome de quem marcou como concluída */
+  completedBy?: string | null
+  /** Quando foi marcada como concluída (ISO) */
+  completedAt?: string | null
+}
+
+export interface AtaEditEntry {
+  at: string
+  by: string
+  summary: string
 }
 
 export interface Ata {
@@ -27,6 +37,9 @@ export interface Ata {
   createdAt: string
   updatedAt: string
   createdBy?: string | null
+  /** Nome de quem editou por último */
+  updatedBy?: string | null
+  editHistory?: AtaEditEntry[]
 }
 
 export interface Profile {
@@ -63,6 +76,8 @@ export interface AtaRow {
   created_at: string
   updated_at: string
   created_by: string | null
+  updated_by: string | null
+  edit_history: AtaEditEntry[] | null
 }
 
 export interface ProfileRow {

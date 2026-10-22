@@ -35,6 +35,20 @@ export function formatDateLong(iso: string): string {
   })
 }
 
+/** Formata ISO datetime para exibição (data e hora local). */
+export function formatDateTime(iso: string): string {
+  if (!iso) return '—'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export function createEmptyAta(createdBy?: string | null): Ata {
   const now = new Date().toISOString()
   return {
@@ -53,6 +67,8 @@ export function createEmptyAta(createdBy?: string | null): Ata {
     createdAt: now,
     updatedAt: now,
     createdBy: createdBy ?? null,
+    updatedBy: null,
+    editHistory: [],
   }
 }
 
@@ -97,7 +113,9 @@ export function ataToPlainText(ata: Ata): string {
           .map((a) => {
             const due = a.dueDate ? ` | prazo ${formatDate(a.dueDate)}` : ''
             const who = a.assignee ? ` (${a.assignee})` : ''
-            const done = a.done ? ' [concluída]' : ''
+            const done = a.done
+              ? ` [concluída${a.completedBy ? ` por ${a.completedBy}` : ''}${a.completedAt ? ` em ${formatDateTime(a.completedAt)}` : ''}]`
+              : ''
             return `• ${a.description}${who}${due}${done}`
           })
           .join('\n')

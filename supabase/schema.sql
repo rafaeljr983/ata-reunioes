@@ -40,6 +40,8 @@ create table if not exists public.atas (
   actions jsonb not null default '[]'::jsonb,
   status text not null default 'rascunho' check (status in ('rascunho', 'finalizada')),
   created_by uuid references auth.users (id) on delete set null,
+  updated_by text,
+  edit_history jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
