@@ -119,14 +119,17 @@ export function AtaDetail({
                       />
                       <span>
                         <span className="action__status" aria-hidden="true">
-                          {action.done ? '✓' : '•'}
+                          {action.done ? '✓' : '●'}
                         </span>
                         <strong>{action.description}</strong>
+                        <span className="action__badge">
+                          {action.done ? 'Concluída' : 'Pendente'}
+                        </span>
                         <em className="action__meta">
                           {[action.assignee, action.dueDate ? `prazo ${action.dueDate}` : '']
                             .filter(Boolean)
                             .join(' · ') || 'Sem responsável'}
-                          {!action.done ? ' · pendente' : ''}
+                          
                         </em>
                         {action.done && (action.completedBy || action.completedAt) ? (
                           <em className="action__done-by">

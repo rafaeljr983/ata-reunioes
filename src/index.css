@@ -684,13 +684,15 @@ img {
 }
 
 .action--pending {
-  background: rgba(180, 60, 50, 0.07);
-  border-color: rgba(180, 60, 50, 0.28);
+  background: rgba(190, 55, 45, 0.16);
+  border-color: rgba(170, 45, 38, 0.55);
+  box-shadow: inset 3px 0 0 #c2453a;
 }
 
 .action--done {
-  background: rgba(31, 122, 92, 0.1);
-  border-color: rgba(31, 122, 92, 0.32);
+  background: rgba(31, 122, 92, 0.16);
+  border-color: rgba(31, 122, 92, 0.5);
+  box-shadow: inset 3px 0 0 #1f7a5c;
 }
 
 .action input {
@@ -723,11 +725,13 @@ img {
 }
 
 .action--pending .action__status {
-  color: #a03830;
+  color: #9a2f28;
+  font-size: 1rem;
 }
 
 .action--done .action__status {
-  color: #1a6b50;
+  color: #176348;
+  font-size: 1rem;
 }
 
 .action__meta {
@@ -739,7 +743,31 @@ img {
 }
 
 .action--pending .action__meta {
-  color: #8f3d36;
+  color: #8a322c;
+  font-weight: 600;
+}
+
+.action__badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 0.15em;
+}
+
+.action--pending .action__badge {
+  background: rgba(194, 69, 58, 0.18);
+  color: #8f2e27;
+}
+
+.action--done .action__badge {
+  background: rgba(31, 122, 92, 0.18);
+  color: #176348;
+  text-decoration: none;
 }
 
 .action--done strong {
